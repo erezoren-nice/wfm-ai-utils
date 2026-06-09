@@ -8,9 +8,15 @@ A collection of AI developer utilities for the WFM engineering team.
 
 ### [smartoken](./smartoken/)
 
-One-command setup that reduces Claude Code token usage by 60–95%.
+One-command installer for a four-tool Claude Code token efficiency stack.
+Cuts token usage by **60–95%** across code navigation, context, CLI output, and AI responses.
 
-Installs [Serena MCP](https://github.com/oraios/serena) (semantic code navigation) and [Headroom](https://github.com/headroom-ai/headroom) (context compression) into Claude Code with a single script — no manual config editing required.
+| Tool | Cuts |
+|------|------|
+| Serena | Code file reads |
+| Headroom | Context window |
+| RTK | CLI output noise |
+| Caveman | AI response verbosity |
 
 **Mac/Linux:**
 ```bash
@@ -28,4 +34,4 @@ See [smartoken/README.md](./smartoken/README.md) for full details.
 
 ## Contributing
 
-Add new utilities as top-level directories, each with their own `README.md`. Update this file with a short description entry.
+Add new utilities as top-level directories, each with their own `README.md`. Update this file with a short entry.

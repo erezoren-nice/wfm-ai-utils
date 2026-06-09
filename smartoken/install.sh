@@ -16,10 +16,42 @@ warn() { echo -e "${YELLOW}  ⚠ $*${RESET}"; }
 fail() { echo -e "${RED}  ✖ $*${RESET}"; exit 1; }
 step() { echo -e "\n${BOLD}$*${RESET}"; }
 
+PURPLE="\033[1;95m"
+DIM="\033[2m"
+
+clear
 echo -e ""
-echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${YELLOW}║      Claude Code Setup — Serena MCP + Headroom Wrap         ║${RESET}"
-echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${RESET}"
+echo -e "${PURPLE}  ███████╗███╗   ███╗ █████╗ ██████╗ ████████╗ ██████╗ ██╗  ██╗███████╗███╗   ██╗${RESET}"
+echo -e "${PURPLE}  ██╔════╝████╗ ████║██╔══██╗██╔══██╗╚══██╔══╝██╔═══██╗██║ ██╔╝██╔════╝████╗  ██║${RESET}"
+echo -e "${PURPLE}  ███████╗██╔████╔██║███████║██████╔╝   ██║   ██║   ██║█████╔╝ █████╗  ██╔██╗ ██║${RESET}"
+echo -e "${PURPLE}  ╚════██║██║╚██╔╝██║██╔══██║██╔══██╗   ██║   ██║   ██║██╔═██╗ ██╔══╝  ██║╚██╗██║${RESET}"
+echo -e "${PURPLE}  ███████║██║ ╚═╝ ██║██║  ██║██║  ██║   ██║   ╚██████╔╝██║  ██╗███████╗██║ ╚████║${RESET}"
+echo -e "${PURPLE}  ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝${RESET}"
+echo -e ""
+echo -e "  ${BOLD}Claude Code · Token Efficiency Stack${RESET}  ${DIM}60–95% fewer tokens${RESET}"
+echo -e ""
+echo -e "  ${CYAN}┌─────────────────────────────────────────────────────────────┐${RESET}"
+echo -e "  ${CYAN}│${RESET}  Tool         What it cuts              Savings            ${CYAN}│${RESET}"
+echo -e "  ${CYAN}├─────────────────────────────────────────────────────────────┤${RESET}"
+echo -e "  ${CYAN}│${RESET}  ${GREEN}✦ Serena${RESET}      code file reads → symbols    ${BOLD}60–90%${RESET} input  ${CYAN}│${RESET}"
+echo -e "  ${CYAN}│${RESET}  ${GREEN}✦ Headroom${RESET}    conversation context          ${BOLD}60–95%${RESET} input  ${CYAN}│${RESET}"
+echo -e "  ${CYAN}│${RESET}  ${GREEN}✦ RTK${RESET}         CLI output noise              ${BOLD}60–90%${RESET} input  ${CYAN}│${RESET}"
+echo -e "  ${CYAN}│${RESET}  ${GREEN}✦ Caveman${RESET}     AI response verbosity         ${BOLD}65–75%${RESET} output ${CYAN}│${RESET}"
+echo -e "  ${CYAN}└─────────────────────────────────────────────────────────────┘${RESET}"
+echo -e ""
+echo -e "  These tools are ${BOLD}complementary${RESET} — each targets a different source of waste."
+echo -e "  Install all four for maximum savings."
+echo -e ""
+read -rp "  Install all? [Y/n] → " INSTALL_ALL </dev/tty
+INSTALL_ALL=${INSTALL_ALL:-Y}
+if [[ "$INSTALL_ALL" =~ ^[Nn]$ ]]; then
+  read -rp "  Install Serena?   [Y/n] → " DO_SERENA </dev/tty;   DO_SERENA=${DO_SERENA:-Y}
+  read -rp "  Install Headroom? [Y/n] → " DO_HEADROOM </dev/tty; DO_HEADROOM=${DO_HEADROOM:-Y}
+  read -rp "  Install RTK?      [Y/n] → " DO_RTK </dev/tty;      DO_RTK=${DO_RTK:-Y}
+  read -rp "  Install Caveman?  [Y/n] → " DO_CAVEMAN </dev/tty;  DO_CAVEMAN=${DO_CAVEMAN:-Y}
+else
+  DO_SERENA=Y; DO_HEADROOM=Y; DO_RTK=Y; DO_CAVEMAN=Y
+fi
 echo -e ""
 
 CLAUDE_DIR="$HOME/.claude"
@@ -27,7 +59,7 @@ SKILLS_DIR="$CLAUDE_DIR/skills"
 HOOKS_DIR="$CLAUDE_DIR/hooks"
 
 # ── 1. Prerequisites ────────────────────────────────────────────────────────
-step "1/7  Checking prerequisites"
+step "1/9  Checking prerequisites"
 
 command -v claude &>/dev/null || fail "Claude Code not found. Install it first: https://claude.ai/code"
 ok "Claude Code installed: $(claude --version 2>/dev/null | head -1 || echo 'found')"
@@ -38,7 +70,8 @@ fi
 ok "python3: $(python3 --version)"
 
 # ── 2. Install uv (for Serena MCP) ─────────────────────────────────────────
-step "2/7  Serena dependency: uv"
+if [[ "$DO_SERENA" =~ ^[Yy]$ ]]; then
+step "  Serena dependency: uv"
 
 if command -v uvx &>/dev/null; then
   ok "uvx already installed: $(uvx --version 2>/dev/null | head -1)"
@@ -50,7 +83,7 @@ else
 fi
 
 # ── 3. Install headroom ─────────────────────────────────────────────────────
-step "3/7  Headroom"
+step "3/9  Headroom"
 
 if command -v headroom &>/dev/null; then
   ok "headroom already installed: $(headroom --version 2>/dev/null | head -1 || echo 'found')"
@@ -66,13 +99,13 @@ else
 fi
 
 # ── 4. Create directory structure ───────────────────────────────────────────
-step "4/7  Creating directories"
+step "4/9  Creating directories"
 
 mkdir -p "$SKILLS_DIR/serena-session-start" "$HOOKS_DIR"
 ok "Directories ready"
 
 # ── 5. Write files ──────────────────────────────────────────────────────────
-step "5/7  Writing skill + hook files"
+step "5/9  Writing skill + hook files"
 
 # — Hook Python script —
 cat > "$HOOKS_DIR/serena-session-start-hook.py" << 'PYEOF'
@@ -194,7 +227,7 @@ SKILLEOF
 ok "Skill: $SKILLS_DIR/serena-session-start/SKILL.md"
 
 # ── 6. Merge config files (Python) ─────────────────────────────────────────
-step "6/7  Merging Claude config files"
+step "6/9  Merging Claude config files"
 
 python3 << 'EOF'
 import json, os, sys
@@ -273,7 +306,7 @@ else:
 EOF
 
 # ── 7. Shell profile: Headroom claude() function ───────────────────────────
-step "7/7  Shell profile: Headroom claude() function"
+step "7/9  Shell profile: Headroom claude() function"
 
 HEADROOM_MARKER="# Headroom wrap — ask per project before launching Claude"
 SHELL_PROFILE=""
@@ -334,6 +367,41 @@ claude() {
 }
 ZSHEOF
   ok "Headroom claude() added to $SHELL_PROFILE"
+fi
+
+
+# ── 8. RTK — CLI output compressor ─────────────────────────────────────────
+if [[ "$DO_RTK" =~ ^[Yy]$ ]]; then
+step "8/9  RTK — CLI output compressor"
+if command -v rtk &>/dev/null; then
+  ok "RTK already installed ($(rtk --version 2>/dev/null | head -1))"
+else
+  info "Installing RTK..."
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  if command -v rtk &>/dev/null; then
+    rtk init --claude-code 2>/dev/null || true
+    ok "RTK installed and wired to Claude Code"
+  else
+    info "RTK installed to ~/.local/bin — add it to PATH then run: rtk init --claude-code"
+  fi
+fi
+fi
+
+# ── 9. Caveman — AI response compressor ─────────────────────────────────────
+if [[ "$DO_CAVEMAN" =~ ^[Yy]$ ]]; then
+step "9/9  Caveman — AI response compressor"
+if [ -f "$HOME/.claude/skills/caveman/SKILL.md" ] || command -v caveman &>/dev/null; then
+  ok "Caveman already installed"
+else
+  if ! command -v node &>/dev/null || [[ $(node --version 2>/dev/null | grep -oE '[0-9]+' | head -1) -lt 18 ]]; then
+    info "Caveman requires Node ≥18 — skipping. Install Node then re-run."
+  else
+    info "Installing Caveman..."
+    curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash
+    ok "Caveman installed"
+  fi
+fi
 fi
 
 # ── Done ────────────────────────────────────────────────────────────────────

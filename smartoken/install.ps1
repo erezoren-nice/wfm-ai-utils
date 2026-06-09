@@ -10,10 +10,41 @@ function Warn($msg) { Write-Host "  ! $msg" -ForegroundColor Yellow }
 function Fail($msg) { Write-Host "  X $msg" -ForegroundColor Red; exit 1 }
 function Step($msg) { Write-Host "`n$msg" -ForegroundColor White }
 
+Clear-Host
 Write-Host ""
-Write-Host "================================================================" -ForegroundColor Yellow
-Write-Host "   Claude Code Setup -- Serena MCP + Headroom Wrap (Windows)   " -ForegroundColor Yellow
-Write-Host "================================================================" -ForegroundColor Yellow
+Write-Host "  _____ __  __    _    ____ _____ ___  _  _______ _   _" -ForegroundColor Magenta
+Write-Host " / ____|  \/  |  / \  |  _ \_   _/ _ \| |/ / ____| \ | |" -ForegroundColor Magenta
+Write-Host " \__  \| |\/| | / _ \ | |_) || || | | | ' /|  _| |  \| |" -ForegroundColor Magenta
+Write-Host "  __) | |  | |/ ___ \|  _ < | || |_| | . \| |___| |\  |" -ForegroundColor Magenta
+Write-Host " |____/|_|  |_/_/   \_\_| \_\|_| \___/|_|\_\_____|_| \_|" -ForegroundColor Magenta
+Write-Host ""
+Write-Host "  Claude Code - Token Efficiency Stack   60-95% fewer tokens" -ForegroundColor White
+Write-Host ""
+Write-Host "  +-----------------------------------------------------------+" -ForegroundColor Cyan
+Write-Host "  |  Tool        What it cuts                  Savings        |" -ForegroundColor Cyan
+Write-Host "  +-----------------------------------------------------------+" -ForegroundColor Cyan
+Write-Host "  |  Serena      code file reads -> symbols    60-90% input   |" -ForegroundColor White
+Write-Host "  |  Headroom    conversation context          60-95% input   |" -ForegroundColor White
+Write-Host "  |  RTK         CLI output noise              60-90% input   |" -ForegroundColor White
+Write-Host "  |  Caveman     AI response verbosity         65-75% output  |" -ForegroundColor White
+Write-Host "  +-----------------------------------------------------------+" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  These tools are complementary - each targets a different source of waste." -ForegroundColor Gray
+Write-Host "  Install all four for maximum savings." -ForegroundColor Gray
+Write-Host ""
+$installAll = Read-Host "  Install all? [Y/n]"
+if ($installAll -match '^[Nn]') {
+  $doSerena   = Read-Host "  Install Serena?   [Y/n]"
+  $doHeadroom = Read-Host "  Install Headroom? [Y/n]"
+  $doRtk      = Read-Host "  Install RTK?      [Y/n]"
+  $doCaveman  = Read-Host "  Install Caveman?  [Y/n]"
+  $doSerena   = if ($doSerena   -match '^[Nn]') { "N" } else { "Y" }
+  $doHeadroom = if ($doHeadroom -match '^[Nn]') { "N" } else { "Y" }
+  $doRtk      = if ($doRtk     -match '^[Nn]') { "N" } else { "Y" }
+  $doCaveman  = if ($doCaveman  -match '^[Nn]') { "N" } else { "Y" }
+} else {
+  $doSerena = "Y"; $doHeadroom = "Y"; $doRtk = "Y"; $doCaveman = "Y"
+}
 Write-Host ""
 
 $ClaudeDir  = "$env:USERPROFILE\.claude"
@@ -21,7 +52,7 @@ $SkillsDir  = "$ClaudeDir\skills\serena-session-start"
 $HooksDir   = "$ClaudeDir\hooks"
 
 # ── 1. Prerequisites ────────────────────────────────────────────────────────
-Step "1/7  Checking prerequisites"
+Step "1/9  Checking prerequisites"
 
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
     Fail "Claude Code not found. Install it first: https://claude.ai/code"
@@ -35,7 +66,7 @@ else { Fail "Python not found. Install Python 3.10+ from https://python.org" }
 Ok "Python found: $PythonCmd"
 
 # ── 2. Install uv (for Serena MCP) ─────────────────────────────────────────
-Step "2/7  Serena dependency: uv"
+Step "2/9  Serena dependency: uv"
 
 if (Get-Command uvx -ErrorAction SilentlyContinue) {
     Ok "uvx already installed"
@@ -47,7 +78,7 @@ if (Get-Command uvx -ErrorAction SilentlyContinue) {
 }
 
 # ── 3. Install headroom ─────────────────────────────────────────────────────
-Step "3/7  Headroom"
+Step "3/9  Headroom"
 
 if (Get-Command headroom -ErrorAction SilentlyContinue) {
     Ok "headroom already installed"
@@ -62,14 +93,14 @@ if (Get-Command headroom -ErrorAction SilentlyContinue) {
 }
 
 # ── 4. Create directory structure ───────────────────────────────────────────
-Step "4/7  Creating directories"
+Step "4/9  Creating directories"
 
 New-Item -ItemType Directory -Path $SkillsDir -Force | Out-Null
 New-Item -ItemType Directory -Path $HooksDir  -Force | Out-Null
 Ok "Directories ready"
 
 # ── 5. Write skill + hook files ─────────────────────────────────────────────
-Step "5/7  Writing skill + hook files"
+Step "5/9  Writing skill + hook files"
 
 # — Hook Python script —
 $HookScript = @'
@@ -170,7 +201,7 @@ Set-Content -Path "$SkillsDir\SKILL.md" -Value $SkillMd -Encoding UTF8
 Ok "Skill: $SkillsDir\SKILL.md"
 
 # ── 6. Merge config files (Python) ─────────────────────────────────────────
-Step "6/7  Merging Claude config files"
+Step "6/9  Merging Claude config files"
 
 # Use the detected python command (handle forward slashes for Windows paths)
 $HookCmdPath = "$ClaudeDir\hooks\serena-session-start-hook.py" -replace '\\', '/'
@@ -253,7 +284,7 @@ else:
 & $PythonCmd -c $PythonScript
 
 # ── 7. PowerShell profile: Headroom claude function ─────────────────────────
-Step "7/7  PowerShell profile: Headroom claude() function"
+Step "7/9  PowerShell profile: Headroom claude() function"
 
 $ProfilePath = $PROFILE
 if (-not (Test-Path (Split-Path $ProfilePath))) {
@@ -301,6 +332,64 @@ function claude {
     Add-Content -Path $ProfilePath -Value $HeadroomFunc -Encoding UTF8
     Ok "Headroom claude() added to $ProfilePath"
 }
+
+
+# ── 8. RTK — CLI output compressor ───────────────────────────────────────────
+if ($doRtk -eq "Y") {
+Step "8/9  RTK — CLI output compressor"
+$rtkPath = "$env:USERPROFILE\.local\bin\rtk.exe"
+if (Get-Command rtk -ErrorAction SilentlyContinue) {
+    Ok "RTK already installed"
+} else {
+    Info "Downloading RTK..."
+    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "aarch64" } else { "x86_64" }
+    $rtkUrl = "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-$arch-pc-windows-msvc.zip"
+    $zipPath = "$env:TEMP\rtk.zip"
+    $binDir = "$env:USERPROFILE\.local\bin"
+    New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+    try {
+        Invoke-WebRequest -Uri $rtkUrl -OutFile $zipPath -UseBasicParsing
+        Expand-Archive -Path $zipPath -DestinationPath $binDir -Force
+        Remove-Item $zipPath
+        $env:PATH += ";$binDir"
+        if (Get-Command rtk -ErrorAction SilentlyContinue) {
+            rtk init --claude-code 2>$null
+            Ok "RTK installed and wired to Claude Code"
+        } else {
+            Info "RTK installed to $binDir — add to PATH then run: rtk init --claude-code"
+        }
+    } catch {
+        Warn "RTK install failed: $_"
+    }
+}
+
+}  # end RTK gate
+
+# ── 9. Caveman — AI response compressor ───────────────────────────────────────
+if ($doCaveman -eq "Y") {
+Step "9/9  Caveman — AI response compressor"
+if (Test-Path "$ClaudeDir\skills\caveman\SKILL.md") {
+    Ok "Caveman already installed"
+} else {
+    $nodeOk = $false
+    try {
+        $nodeVer = (node --version 2>$null) -replace 'v','' -split '\.' | Select-Object -First 1
+        if ([int]$nodeVer -ge 18) { $nodeOk = $true }
+    } catch {}
+    if (-not $nodeOk) {
+        Warn "Caveman requires Node >=18 — skipping. Install Node then re-run."
+    } else {
+        Info "Installing Caveman..."
+        try {
+            irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex
+            Ok "Caveman installed"
+        } catch {
+            Warn "Caveman install failed: $_"
+        }
+    }
+}
+
+}  # end Caveman gate
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 Write-Host ""
