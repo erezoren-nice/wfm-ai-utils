@@ -16,6 +16,15 @@ warn() { echo -e "${YELLOW}  ⚠ $*${RESET}"; }
 fail() { echo -e "${RED}  ✖ $*${RESET}"; exit 1; }
 step() { echo -e "\n${BOLD}$*${RESET}"; }
 
+# read_tty <prompt> <varname> — falls back to stdin when /dev/tty is unavailable
+read_tty() {
+  if (exec </dev/tty) 2>/dev/null; then
+    read -rp "$1" "$2" </dev/tty || true
+  else
+    read -rp "$1" "$2" || true
+  fi
+}
+
 PURPLE="\033[1;95m"
 DIM="\033[2m"
 
@@ -42,13 +51,13 @@ echo -e ""
 echo -e "  These tools are ${BOLD}complementary${RESET} — each targets a different source of waste."
 echo -e "  Install all four for maximum savings."
 echo -e ""
-read -rp "  Install all? [Y/n] → " INSTALL_ALL </dev/tty
+read_tty "  Install all? [Y/n] → " INSTALL_ALL
 INSTALL_ALL=${INSTALL_ALL:-Y}
 if [[ "$INSTALL_ALL" =~ ^[Nn]$ ]]; then
-  read -rp "  Install Serena?   [Y/n] → " DO_SERENA </dev/tty;   DO_SERENA=${DO_SERENA:-Y}
-  read -rp "  Install Headroom? [Y/n] → " DO_HEADROOM </dev/tty; DO_HEADROOM=${DO_HEADROOM:-Y}
-  read -rp "  Install RTK?      [Y/n] → " DO_RTK </dev/tty;      DO_RTK=${DO_RTK:-Y}
-  read -rp "  Install Caveman?  [Y/n] → " DO_CAVEMAN </dev/tty;  DO_CAVEMAN=${DO_CAVEMAN:-Y}
+  read_tty "  Install Serena?   [Y/n] → " DO_SERENA;   DO_SERENA=${DO_SERENA:-Y}
+  read_tty "  Install Headroom? [Y/n] → " DO_HEADROOM; DO_HEADROOM=${DO_HEADROOM:-Y}
+  read_tty "  Install RTK?      [Y/n] → " DO_RTK;      DO_RTK=${DO_RTK:-Y}
+  read_tty "  Install Caveman?  [Y/n] → " DO_CAVEMAN;  DO_CAVEMAN=${DO_CAVEMAN:-Y}
 else
   DO_SERENA=Y; DO_HEADROOM=Y; DO_RTK=Y; DO_CAVEMAN=Y
 fi
@@ -81,6 +90,7 @@ else
   export PATH="$HOME/.local/bin:$PATH"
   ok "uv installed"
 fi
+fi  # end DO_SERENA
 
 # ── 3. Install headroom ─────────────────────────────────────────────────────
 step "3/9  Headroom"
