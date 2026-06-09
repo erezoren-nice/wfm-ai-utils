@@ -85,7 +85,7 @@ if (Get-Command headroom -ErrorAction SilentlyContinue) {
 } else {
     $ans = Read-Host "  Install headroom-ai now? (60-95% token savings via wrap mode) [y/n]"
     if ($ans -eq "y") {
-        pip install "headroom-ai[all]" --quiet
+        & $PythonCmd -m pip install "headroom-ai[all]" --quiet
         Ok "headroom installed"
     } else {
         Warn "Skipped -- install later: pip install 'headroom-ai[all]'"
@@ -377,7 +377,7 @@ if (Test-Path "$ClaudeDir\skills\caveman\SKILL.md") {
         if ([int]$nodeVer -ge 18) { $nodeOk = $true }
     } catch {}
     if (-not $nodeOk) {
-        Warn "Caveman requires Node >=18 — skipping. Install Node then re-run."
+        Warn "Caveman requires Node >=18 — skipping. Install from https://nodejs.org then re-run."
     } else {
         Info "Installing Caveman..."
         try {

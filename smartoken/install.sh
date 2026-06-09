@@ -66,6 +66,7 @@ echo -e ""
 CLAUDE_DIR="$HOME/.claude"
 SKILLS_DIR="$CLAUDE_DIR/skills"
 HOOKS_DIR="$CLAUDE_DIR/hooks"
+OS="$(uname -s)"   # Darwin = macOS, Linux = Linux
 
 # ── 1. Prerequisites ────────────────────────────────────────────────────────
 step "1/9  Checking prerequisites"
@@ -74,7 +75,11 @@ command -v claude &>/dev/null || fail "Claude Code not found. Install it first: 
 ok "Claude Code installed: $(claude --version 2>/dev/null | head -1 || echo 'found')"
 
 if ! command -v python3 &>/dev/null; then
-  fail "python3 not found. Install Python 3.10+ and re-run."
+  if [[ "$OS" == "Darwin" ]]; then
+    fail "python3 not found. Install: brew install python3  (or https://python.org — needs 3.10+)"
+  else
+    fail "python3 not found. Install: sudo apt install python3  (or dnf/pacman — needs 3.10+)"
+  fi
 fi
 ok "python3: $(python3 --version)"
 
@@ -93,6 +98,7 @@ fi
 fi  # end DO_SERENA
 
 # ── 3. Install headroom ─────────────────────────────────────────────────────
+if [[ "$DO_HEADROOM" =~ ^[Yy]$ ]]; then
 step "3/9  Headroom"
 
 if command -v headroom &>/dev/null; then
@@ -101,12 +107,13 @@ else
   echo -en "${CYAN}  Install headroom-ai now? (60-95% token savings via wrap mode) [y/n] → ${RESET}"
   read -r ans
   if [[ "$ans" == "y" ]]; then
-    pip install "headroom-ai[all]" --quiet
+    python3 -m pip install "headroom-ai[all]" --quiet
     ok "headroom installed"
   else
-    warn "Skipped — you can install later: pip install 'headroom-ai[all]'"
+    warn "Skipped — install later: python3 -m pip install 'headroom-ai[all]'"
   fi
 fi
+fi  # end DO_HEADROOM
 
 # ── 4. Create directory structure ───────────────────────────────────────────
 step "4/9  Creating directories"
@@ -405,7 +412,11 @@ if [ -f "$HOME/.claude/skills/caveman/SKILL.md" ] || command -v caveman &>/dev/n
   ok "Caveman already installed"
 else
   if ! command -v node &>/dev/null || [[ $(node --version 2>/dev/null | grep -oE '[0-9]+' | head -1) -lt 18 ]]; then
-    info "Caveman requires Node ≥18 — skipping. Install Node then re-run."
+    if [[ "$OS" == "Darwin" ]]; then
+      warn "Caveman requires Node ≥18 — skipping. Install: brew install node  then re-run."
+    else
+      warn "Caveman requires Node ≥18 — skipping. Install: sudo apt install nodejs  (or https://github.com/nvm-sh/nvm) then re-run."
+    fi
   else
     info "Installing Caveman..."
     curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash

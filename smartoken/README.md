@@ -18,25 +18,39 @@ Each tool attacks a different source of token waste. Use all four together.
 
 ---
 
+## Prerequisites
+
+Install these **before** running the installer.
+
+| Requirement | Status | Mac/Linux | Windows |
+|-------------|--------|-----------|---------|
+| [Claude Code](https://claude.ai/code) | **Required** | `npm install -g @anthropic-ai/claude-code` | same |
+| Python 3.10+ | **Required** | `brew install python3` | [python.org](https://www.python.org/downloads/) |
+| Node ≥18 | Caveman only | `brew install node` | [nodejs.org](https://nodejs.org/) |
+
+> **No brew?** Install it first: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+
+The installer handles everything else (uv, Serena MCP, headroom-ai, RTK binary) automatically.
+
+---
+
 ## Install
 
 ### Mac / Linux
 
 ```bash
-bash install.sh
+cd smartoken
+./install.sh
 ```
-
-> Requires: [Claude Code](https://claude.ai/code), Python 3.10+, Node ≥18 (for Caveman)
 
 ### Windows
 
 Open PowerShell as Administrator:
 
 ```powershell
+cd smartoken
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
-
-> Requires: [Claude Code](https://claude.ai/code), Python 3.10+, Node ≥18 (for Caveman)
 
 The installer shows a menu — press **Enter** to install all four, or choose individually.
 
@@ -70,18 +84,6 @@ rtk gain
 ### Caveman
 Trigger with `/caveman` or say "talk like caveman" in any session.
 Stop with "normal mode". Intensities: `lite`, `full` (default), `ultra`.
-
----
-
-## Prerequisites
-
-| Requirement | Mac/Linux | Windows |
-|-------------|-----------|---------|
-| Claude Code | [claude.ai/code](https://claude.ai/code) | [claude.ai/code](https://claude.ai/code) |
-| Python 3.10+ | `brew install python` | [python.org](https://www.python.org/downloads/) |
-| Node ≥18 *(Caveman only)* | `brew install node` | [nodejs.org](https://nodejs.org/) |
-
-The installer handles uv, Serena MCP, headroom-ai, RTK binary, and Caveman automatically.
 
 ---
 
