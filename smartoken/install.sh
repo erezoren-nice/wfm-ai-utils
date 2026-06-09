@@ -1,0 +1,352 @@
+#!/usr/bin/env bash
+# deploy-setup.sh — Deploy Serena + Headroom Claude setup (Mac/Linux)
+# Idempotent: safe to run multiple times on the same or a new machine.
+set -euo pipefail
+
+BOLD="\033[1m"
+GREEN="\033[1;92m"
+YELLOW="\033[1;93m"
+CYAN="\033[1;96m"
+RED="\033[1;91m"
+RESET="\033[0m"
+
+ok()   { echo -e "${GREEN}  ✔ $*${RESET}"; }
+info() { echo -e "${CYAN}  → $*${RESET}"; }
+warn() { echo -e "${YELLOW}  ⚠ $*${RESET}"; }
+fail() { echo -e "${RED}  ✖ $*${RESET}"; exit 1; }
+step() { echo -e "\n${BOLD}$*${RESET}"; }
+
+echo -e ""
+echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${YELLOW}║      Claude Code Setup — Serena MCP + Headroom Wrap         ║${RESET}"
+echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${RESET}"
+echo -e ""
+
+CLAUDE_DIR="$HOME/.claude"
+SKILLS_DIR="$CLAUDE_DIR/skills"
+HOOKS_DIR="$CLAUDE_DIR/hooks"
+
+# ── 1. Prerequisites ────────────────────────────────────────────────────────
+step "1/7  Checking prerequisites"
+
+command -v claude &>/dev/null || fail "Claude Code not found. Install it first: https://claude.ai/code"
+ok "Claude Code installed: $(claude --version 2>/dev/null | head -1 || echo 'found')"
+
+if ! command -v python3 &>/dev/null; then
+  fail "python3 not found. Install Python 3.10+ and re-run."
+fi
+ok "python3: $(python3 --version)"
+
+# ── 2. Install uv (for Serena MCP) ─────────────────────────────────────────
+step "2/7  Serena dependency: uv"
+
+if command -v uvx &>/dev/null; then
+  ok "uvx already installed: $(uvx --version 2>/dev/null | head -1)"
+else
+  info "Installing uv (needed for Serena MCP)..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  ok "uv installed"
+fi
+
+# ── 3. Install headroom ─────────────────────────────────────────────────────
+step "3/7  Headroom"
+
+if command -v headroom &>/dev/null; then
+  ok "headroom already installed: $(headroom --version 2>/dev/null | head -1 || echo 'found')"
+else
+  echo -en "${CYAN}  Install headroom-ai now? (60-95% token savings via wrap mode) [y/n] → ${RESET}"
+  read -r ans
+  if [[ "$ans" == "y" ]]; then
+    pip install "headroom-ai[all]" --quiet
+    ok "headroom installed"
+  else
+    warn "Skipped — you can install later: pip install 'headroom-ai[all]'"
+  fi
+fi
+
+# ── 4. Create directory structure ───────────────────────────────────────────
+step "4/7  Creating directories"
+
+mkdir -p "$SKILLS_DIR/serena-session-start" "$HOOKS_DIR"
+ok "Directories ready"
+
+# ── 5. Write files ──────────────────────────────────────────────────────────
+step "5/7  Writing skill + hook files"
+
+# — Hook Python script —
+cat > "$HOOKS_DIR/serena-session-start-hook.py" << 'PYEOF'
+import json
+
+print(json.dumps({
+    "systemMessage": "\U0001f535 SERENA — session start required. Claude will ask you about activation now.",
+    "hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": (
+            "SESSION START REQUIREMENT: Your very first action in this conversation must be to invoke "
+            "the Skill tool with skill=serena-session-start. Do this BEFORE responding to any user message, "
+            "BEFORE clarifying questions, and BEFORE any other action. "
+            "The skill will ask the user about Serena activation and handle everything from there."
+        )
+    }
+}))
+PYEOF
+ok "Hook script: $HOOKS_DIR/serena-session-start-hook.py"
+
+# — Skill SKILL.md —
+cat > "$SKILLS_DIR/serena-session-start/SKILL.md" << 'SKILLEOF'
+---
+name: serena-session-start
+description: Serena MCP session initialization — ask user, activate project, load or build memories. Enables token-efficient semantic code navigation. Invoke at the start of every session.
+---
+
+# Serena Session Start
+
+## Purpose
+
+Activate Serena MCP to unlock token-efficient semantic code navigation (find symbols, declarations,
+references, replace function bodies) instead of expensive raw file reads.
+
+---
+
+## Step 1 — Ask the User
+
+Say exactly this, as your first message — nothing before it, nothing after it on the same turn:
+
+> 🔵 **SERENA MCP** — Activate for token-efficient code navigation? **[y/n]**
+
+Wait for the response. If **n** → skip this skill entirely and proceed normally.
+
+If **y** → continue below.
+
+---
+
+## Step 2 — Load Serena Instructions
+
+Call `mcp__oraios_serena__initial_instructions` (no arguments required).
+
+This loads the Serena manual into context. **Required before any other Serena tool call.** Do not skip.
+
+---
+
+## Step 3 — Detect the Project
+
+```bash
+pwd
+```
+
+This gives the project root. Also check for a Serena config:
+
+```bash
+ls "$(pwd)/project.yml" 2>/dev/null && echo "HAS_CONFIG" || echo "NO_CONFIG"
+```
+
+---
+
+## Step 4 — Activate
+
+### Case A: project.yml found → Full activation
+
+1. Call `mcp__oraios_serena__activate_project` with `project_root = <CWD>`
+2. Call `mcp__oraios_serena__list_memories` — list all stored memories
+3. Read the top 3–5 most relevant memories via `mcp__oraios_serena__read_memory`
+4. Tell the user in one sentence what was loaded.
+
+### Case B: project.yml NOT found → Onboarding
+
+Tell the user:
+> No Serena config found. Shall I run onboarding? It analyzes the codebase and writes persistent memories. (~2 min)
+
+- If **yes**: call `mcp__oraios_serena__onboarding` with `project_root = <CWD>`. Then re-run Step 4A.
+- If **no**: call `mcp__oraios_serena__activate_project` for basic symbol navigation.
+
+---
+
+## Step 5 — Handle Technical Issues
+
+If any Serena call errors:
+
+1. Show the error clearly.
+2. Check uvx: `uvx --from git+https://github.com/oraios/serena serena --version 2>&1 | head -3`
+3. Fix:
+
+| Symptom | Fix |
+|---------|-----|
+| `uvx: command not found` | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| `Connection refused` | Check `~/.claude/config.json` has correct uvx args |
+| Any other error | Invoke the `serena-onboarding` skill for guided setup |
+
+---
+
+## Step 6 — Serena Best Practices (Apply Throughout the Session)
+
+| Instead of | Use |
+|------------|-----|
+| `Read` large code files | `get_symbols_overview` → `find_symbol` → `find_declaration` |
+| `grep` for usages | `find_referencing_symbols` |
+| Reading before editing a function | `replace_symbol_body` directly |
+| Checking compile errors | `get_diagnostics_for_file` |
+| Re-discovering project context | `list_memories` → `read_memory` |
+
+**Rule:** Before any `Read` on a code file, ask: "Can Serena give me what I need?" Fall back to `Read`
+only for non-code files or when Serena cannot locate the symbol.
+SKILLEOF
+ok "Skill: $SKILLS_DIR/serena-session-start/SKILL.md"
+
+# ── 6. Merge config files (Python) ─────────────────────────────────────────
+step "6/7  Merging Claude config files"
+
+python3 << 'EOF'
+import json, os, sys
+
+home = os.path.expanduser("~")
+claude_dir = os.path.join(home, ".claude")
+
+# ── settings.json: add SessionStart hook ──────────────────────────────────
+settings_path = os.path.join(claude_dir, "settings.json")
+settings = {}
+if os.path.exists(settings_path):
+    with open(settings_path) as f:
+        settings = json.load(f)
+
+hook_cmd = "python3 ~/.claude/hooks/serena-session-start-hook.py"
+hooks = settings.setdefault("hooks", {})
+session_hooks = hooks.setdefault("SessionStart", [])
+
+already = any(
+    any(h.get("command", "").endswith("serena-session-start-hook.py")
+        for h in group.get("hooks", []))
+    for group in session_hooks
+)
+if not already:
+    session_hooks.append({"hooks": [{"type": "command", "command": hook_cmd, "timeout": 5}]})
+    print("  ✔ SessionStart hook added to settings.json")
+else:
+    print("  ✔ SessionStart hook already present in settings.json")
+
+with open(settings_path, "w") as f:
+    json.dump(settings, f, indent=2)
+
+# ── config.json: add Serena MCP server ────────────────────────────────────
+config_path = os.path.join(claude_dir, "config.json")
+config = {}
+if os.path.exists(config_path):
+    with open(config_path) as f:
+        config = json.load(f)
+
+mcp = config.setdefault("mcpServers", {})
+if "oraios/serena" not in mcp:
+    mcp["oraios/serena"] = {
+        "type": "stdio",
+        "command": "uvx",
+        "args": [
+            "--from", "git+https://github.com/oraios/serena",
+            "serena", "start-mcp-server", "serena@latest",
+            "--context", "ide-assistant"
+        ],
+        "gallery": "https://api.mcp.github.com",
+        "version": "1.0.0"
+    }
+    print("  ✔ Serena MCP server added to config.json")
+else:
+    print("  ✔ Serena MCP already present in config.json")
+
+with open(config_path, "w") as f:
+    json.dump(config, f, indent=2)
+
+# ── CLAUDE.md: add Serena session-start section ───────────────────────────
+claude_md = os.path.join(claude_dir, "CLAUDE.md")
+serena_block = """
+# Serena MCP — Session Start
+At the very start of every conversation, invoke the `serena-session-start` skill BEFORE any other response.
+It asks the user whether to activate Serena, handles config detection, and loads project memories.
+Once active: prefer Serena semantic tools (`find_symbol`, `find_declaration`, `replace_symbol_body`, etc.) over raw `Read` calls on code files — this saves significant tokens.
+"""
+
+content = open(claude_md).read() if os.path.exists(claude_md) else ""
+if "Serena MCP" not in content:
+    with open(claude_md, "a") as f:
+        f.write(serena_block)
+    print("  ✔ Serena section added to CLAUDE.md")
+else:
+    print("  ✔ Serena section already present in CLAUDE.md")
+EOF
+
+# ── 7. Shell profile: Headroom claude() function ───────────────────────────
+step "7/7  Shell profile: Headroom claude() function"
+
+HEADROOM_MARKER="# Headroom wrap — ask per project before launching Claude"
+SHELL_PROFILE=""
+
+# Detect active shell profile
+if [[ "${SHELL:-}" == *"zsh"* ]] || [[ -f "$HOME/.zshrc" ]]; then
+  SHELL_PROFILE="$HOME/.zshrc"
+elif [[ "${SHELL:-}" == *"bash"* ]] || [[ -f "$HOME/.bash_profile" ]]; then
+  SHELL_PROFILE="$HOME/.bash_profile"
+else
+  SHELL_PROFILE="$HOME/.profile"
+fi
+
+if grep -qF "$HEADROOM_MARKER" "$SHELL_PROFILE" 2>/dev/null; then
+  ok "Headroom claude() already in $SHELL_PROFILE"
+else
+  cat >> "$SHELL_PROFILE" << 'ZSHEOF'
+
+# Headroom wrap — ask per project before launching Claude
+# Remembers choice via .headroom file in project root; "always" creates the file.
+claude() {
+  local cwd="$(pwd)"
+  local marker="$cwd/.headroom"
+  local use_headroom="n"
+  local BOLD="\e[1m"
+  local YELLOW="\e[1;93m"
+  local GREEN="\e[1;92m"
+  local CYAN="\e[1;96m"
+  local RESET="\e[0m"
+
+  if [[ -f "$marker" ]]; then
+    echo -e "${GREEN}▶ HEADROOM${RESET} ${BOLD}wrap mode active${RESET} for this project. (rm .headroom to disable)"
+    use_headroom="y"
+  else
+    echo -e ""
+    echo -e "${YELLOW}╔══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${YELLOW}║  🚀 HEADROOM  60-95% fewer tokens via wrap mode     ║${RESET}"
+    echo -e "${YELLOW}╚══════════════════════════════════════════════════════╝${RESET}"
+    echo -en "${CYAN}   Activate for this session? [y/always/n] → ${RESET}"
+    read -r use_headroom </dev/tty
+    if [[ "$use_headroom" == "always" ]]; then
+      touch "$marker"
+      echo -e "${GREEN}   ✔ Saved .headroom — auto-enabled for this project from now on.${RESET}"
+      use_headroom="y"
+    elif [[ "$use_headroom" == "y" ]]; then
+      echo -e "${GREEN}   ✔ Headroom wrap mode on for this session.${RESET}"
+    else
+      echo -e "   Skipping Headroom — launching plain claude."
+    fi
+    echo -e ""
+  fi
+
+  if [[ "$use_headroom" == "y" ]]; then
+    headroom wrap claude "$@"
+  else
+    command claude "$@"
+  fi
+}
+ZSHEOF
+  ok "Headroom claude() added to $SHELL_PROFILE"
+fi
+
+# ── Done ────────────────────────────────────────────────────────────────────
+echo -e ""
+echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${RESET}"
+echo -e "${GREEN}║  ✔  Setup complete! Reload your shell to activate:          ║${RESET}"
+echo -e "${GREEN}║     source ~/${SHELL_PROFILE##*/}                                     ║${RESET}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${RESET}"
+echo -e ""
+echo -e "  ${BOLD}What was deployed:${RESET}"
+echo -e "  • Serena MCP server  → ~/.claude/config.json"
+echo -e "  • SessionStart hook  → ~/.claude/settings.json"
+echo -e "  • Serena skill       → ~/.claude/skills/serena-session-start/"
+echo -e "  • CLAUDE.md section  → ~/.claude/CLAUDE.md"
+echo -e "  • Headroom claude()  → $SHELL_PROFILE"
+echo -e ""
