@@ -67,6 +67,7 @@ else { Fail "Python not found. Install Python 3.10+ from https://python.org" }
 Ok "Python found: $PythonCmd"
 
 # ── 2. Install uv (for Serena MCP) ─────────────────────────────────────────
+if ($doSerena -eq "Y") {
 Step "2/9  Serena dependency: uv"
 
 if (Get-Command uvx -ErrorAction SilentlyContinue) {
@@ -77,8 +78,10 @@ if (Get-Command uvx -ErrorAction SilentlyContinue) {
     $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
     Ok "uv installed"
 }
+}  # end doSerena
 
 # ── 3. Install headroom ─────────────────────────────────────────────────────
+if ($doHeadroom -eq "Y") {
 Step "3/9  Headroom"
 
 if (Get-Command headroom -ErrorAction SilentlyContinue) {
@@ -89,18 +92,22 @@ if (Get-Command headroom -ErrorAction SilentlyContinue) {
         & $PythonCmd -m pip install "headroom-ai[all]" --quiet
         Ok "headroom installed"
     } else {
-        Warn "Skipped -- install later: pip install 'headroom-ai[all]'"
+        Warn "Skipped -- install later: python -m pip install 'headroom-ai[all]'"
     }
 }
+}  # end doHeadroom
 
 # ── 4. Create directory structure ───────────────────────────────────────────
+if ($doSerena -eq "Y") {
 Step "4/9  Creating directories"
 
 New-Item -ItemType Directory -Path $SkillsDir -Force | Out-Null
 New-Item -ItemType Directory -Path $HooksDir  -Force | Out-Null
 Ok "Directories ready"
+}  # end doSerena
 
 # ── 5. Write skill + hook files ─────────────────────────────────────────────
+if ($doSerena -eq "Y") {
 Step "5/9  Writing skill + hook files"
 
 # — Hook Python script —
@@ -200,8 +207,10 @@ If declined, activate without config for basic symbol navigation.
 '@
 Set-Content -Path "$SkillsDir\SKILL.md" -Value $SkillMd -Encoding UTF8
 Ok "Skill: $SkillsDir\SKILL.md"
+}  # end doSerena
 
 # ── 6. Merge config files (Python) ─────────────────────────────────────────
+if ($doSerena -eq "Y") {
 Step "6/9  Merging Claude config files"
 
 # Use the detected python command (handle forward slashes for Windows paths)
@@ -283,8 +292,10 @@ else:
 "@
 
 & $PythonCmd -c $PythonScript
+}  # end doSerena
 
 # ── 7. PowerShell profile: Headroom claude function ─────────────────────────
+if ($doHeadroom -eq "Y") {
 Step "7/9  PowerShell profile: Headroom claude() function"
 
 $ProfilePath = $PROFILE
@@ -333,7 +344,7 @@ function claude {
     Add-Content -Path $ProfilePath -Value $HeadroomFunc -Encoding UTF8
     Ok "Headroom claude() added to $ProfilePath"
 }
-
+}  # end doHeadroom
 
 # ── 8. RTK — CLI output compressor ───────────────────────────────────────────
 if ($doRtk -eq "Y") {

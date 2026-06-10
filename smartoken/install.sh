@@ -117,12 +117,15 @@ fi
 fi  # end DO_HEADROOM
 
 # ── 4. Create directory structure ───────────────────────────────────────────
+if [[ "$DO_SERENA" =~ ^[Yy]$ ]]; then
 step "4/9  Creating directories"
 
 mkdir -p "$SKILLS_DIR/serena-session-start" "$HOOKS_DIR"
 ok "Directories ready"
+fi  # end DO_SERENA
 
 # ── 5. Write files ──────────────────────────────────────────────────────────
+if [[ "$DO_SERENA" =~ ^[Yy]$ ]]; then
 step "5/9  Writing skill + hook files"
 
 # — Hook Python script —
@@ -243,8 +246,10 @@ If any Serena call errors:
 only for non-code files or when Serena cannot locate the symbol.
 SKILLEOF
 ok "Skill: $SKILLS_DIR/serena-session-start/SKILL.md"
+fi  # end DO_SERENA
 
 # ── 6. Merge config files (Python) ─────────────────────────────────────────
+if [[ "$DO_SERENA" =~ ^[Yy]$ ]]; then
 step "6/9  Merging Claude config files"
 
 python3 << 'EOF'
@@ -322,8 +327,10 @@ if "Serena MCP" not in content:
 else:
     print("  ✔ Serena section already present in CLAUDE.md")
 EOF
+fi  # end DO_SERENA
 
 # ── 7. Shell profile: Headroom claude() function ───────────────────────────
+if [[ "$DO_HEADROOM" =~ ^[Yy]$ ]]; then
 step "7/9  Shell profile: Headroom claude() function"
 
 HEADROOM_MARKER="# Headroom wrap — ask per project before launching Claude"
@@ -386,7 +393,7 @@ claude() {
 ZSHEOF
   ok "Headroom claude() added to $SHELL_PROFILE"
 fi
-
+fi  # end DO_HEADROOM
 
 # ── 8. RTK — CLI output compressor ─────────────────────────────────────────
 if [[ "$DO_RTK" =~ ^[Yy]$ ]]; then
