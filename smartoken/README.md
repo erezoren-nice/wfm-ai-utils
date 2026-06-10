@@ -56,6 +56,37 @@ The installer shows a menu — press **Enter** to install all four, or choose in
 
 ---
 
+## Uninstall
+
+### Mac / Linux
+
+```bash
+cd smartoken
+./uninstall.sh
+```
+
+### Windows
+
+```powershell
+cd smartoken
+powershell -ExecutionPolicy Bypass -File uninstall.ps1
+```
+
+Or use the script the installer placed in `~/.claude/`:
+
+```bash
+~/.claude/uninstall-smartoken.sh        # Mac/Linux
+```
+```powershell
+& "$env:USERPROFILE\.claude\uninstall-smartoken.ps1"   # Windows
+```
+
+The uninstaller shows the same menu — press **Enter** to remove all four, or choose individually.
+
+> After full uninstall, two small files remain: `~/.claude/uninstall-smartoken.sh` and `~/.claude/skills/smartoken/`. Delete them manually if you want a clean slate.
+
+---
+
 ## How each tool works after install
 
 ### Serena
@@ -99,5 +130,7 @@ Stop with "normal mode". Intensities: `lite`, `full` (default), `ultra`.
 | RTK binary | `~/.local/bin/rtk` |
 | RTK Claude Code hook | `~/.claude/settings.json` |
 | Headroom `claude()` wrapper | `~/.zshrc` / `~/.bash_profile` / PowerShell profile |
+| Uninstall script | `~/.claude/uninstall-smartoken.sh` (or `.ps1`) |
+| Smartoken skill | `~/.claude/skills/smartoken/` |
 
 The installer is **idempotent** — safe to run multiple times.

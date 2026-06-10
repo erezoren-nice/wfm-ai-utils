@@ -2,6 +2,7 @@
 # deploy-setup.sh — Deploy Serena + Headroom Claude setup (Mac/Linux)
 # Idempotent: safe to run multiple times on the same or a new machine.
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BOLD="\033[1m"
 GREEN="\033[1;92m"
@@ -407,7 +408,7 @@ fi
 
 # ── 9. Caveman — AI response compressor ─────────────────────────────────────
 if [[ "$DO_CAVEMAN" =~ ^[Yy]$ ]]; then
-step "9/9  Caveman — AI response compressor"
+step "9/10  Caveman — AI response compressor"
 if [ -f "$HOME/.claude/skills/caveman/SKILL.md" ] || command -v caveman &>/dev/null; then
   ok "Caveman already installed"
 else
@@ -425,6 +426,42 @@ else
 fi
 fi
 
+# ── 10. Management tools (uninstall script + skill) ─────────────────────────
+step "10/10  Management tools"
+
+if [[ -f "$SCRIPT_DIR/uninstall.sh" ]]; then
+  cp "$SCRIPT_DIR/uninstall.sh" "$CLAUDE_DIR/uninstall-smartoken.sh"
+  chmod +x "$CLAUDE_DIR/uninstall-smartoken.sh"
+  ok "Uninstall script: ~/.claude/uninstall-smartoken.sh"
+else
+  warn "uninstall.sh not found — clone the full repo to enable uninstall support"
+fi
+
+mkdir -p "$SKILLS_DIR/smartoken"
+cat > "$SKILLS_DIR/smartoken/SKILL.md" << 'SKILLEOF'
+---
+name: smartoken-uninstall
+description: Uninstall smartoken — removes Serena, Headroom, RTK, and Caveman from this machine.
+---
+
+# Smartoken Uninstall
+
+Run the uninstall script placed in `~/.claude/` during installation.
+
+**Mac/Linux:**
+```bash
+~/.claude/uninstall-smartoken.sh
+```
+
+**Windows (PowerShell as Administrator):**
+```powershell
+powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\uninstall-smartoken.ps1"
+```
+
+The script asks which tools to remove. Reload your shell after.
+SKILLEOF
+ok "Smartoken skill: ~/.claude/skills/smartoken/"
+
 # ── Done ────────────────────────────────────────────────────────────────────
 echo -e ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${RESET}"
@@ -438,4 +475,6 @@ echo -e "  • SessionStart hook  → ~/.claude/settings.json"
 echo -e "  • Serena skill       → ~/.claude/skills/serena-session-start/"
 echo -e "  • CLAUDE.md section  → ~/.claude/CLAUDE.md"
 echo -e "  • Headroom claude()  → $SHELL_PROFILE"
+echo -e "  • Uninstall script   → ~/.claude/uninstall-smartoken.sh"
+echo -e "  • Smartoken skill    → ~/.claude/skills/smartoken/"
 echo -e ""

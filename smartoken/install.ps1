@@ -3,6 +3,7 @@
 # Run with: powershell -ExecutionPolicy Bypass -File deploy-setup.ps1
 
 $ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Ok($msg)   { Write-Host "  v $msg" -ForegroundColor Green }
 function Info($msg) { Write-Host "  -> $msg" -ForegroundColor Cyan }
@@ -367,7 +368,7 @@ if (Get-Command rtk -ErrorAction SilentlyContinue) {
 
 # ── 9. Caveman — AI response compressor ───────────────────────────────────────
 if ($doCaveman -eq "Y") {
-Step "9/9  Caveman — AI response compressor"
+Step "9/10  Caveman — AI response compressor"
 if (Test-Path "$ClaudeDir\skills\caveman\SKILL.md") {
     Ok "Caveman already installed"
 } else {
@@ -391,6 +392,40 @@ if (Test-Path "$ClaudeDir\skills\caveman\SKILL.md") {
 
 }  # end Caveman gate
 
+# ── 10. Management tools (uninstall script + skill) ──────────────────────────
+Step "10/10  Management tools"
+
+$UninstallSrc = "$ScriptDir\uninstall.ps1"
+if (Test-Path $UninstallSrc) {
+    Copy-Item $UninstallSrc "$ClaudeDir\uninstall-smartoken.ps1" -Force
+    Ok "Uninstall script: $ClaudeDir\uninstall-smartoken.ps1"
+} else {
+    Warn "uninstall.ps1 not found -- clone the full repo to enable uninstall support"
+}
+
+$SmartokenSkillDir = "$ClaudeDir\skills\smartoken"
+New-Item -ItemType Directory -Path $SmartokenSkillDir -Force | Out-Null
+$SkillContent = @'
+---
+name: smartoken-uninstall
+description: Uninstall smartoken -- removes Serena, Headroom, RTK, and Caveman from this machine.
+---
+
+# Smartoken Uninstall
+
+Run the uninstall script placed in ~/.claude/ during installation.
+
+Mac/Linux:
+  ~/.claude/uninstall-smartoken.sh
+
+Windows (PowerShell as Administrator):
+  powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\uninstall-smartoken.ps1"
+
+The script asks which tools to remove. Reload your shell after.
+'@
+Set-Content -Path "$SmartokenSkillDir\SKILL.md" -Value $SkillContent -Encoding UTF8
+Ok "Smartoken skill: $SmartokenSkillDir\"
+
 # ── Done ─────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Green
@@ -404,4 +439,6 @@ Write-Host "  * SessionStart hook  -> $ClaudeDir\settings.json"
 Write-Host "  * Serena skill       -> $SkillsDir\"
 Write-Host "  * CLAUDE.md section  -> $ClaudeDir\CLAUDE.md"
 Write-Host "  * Headroom claude()  -> $ProfilePath"
+Write-Host "  * Uninstall script   -> $ClaudeDir\uninstall-smartoken.ps1"
+Write-Host "  * Smartoken skill    -> $SmartokenSkillDir\"
 Write-Host ""
