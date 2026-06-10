@@ -46,6 +46,7 @@ if ($installAll -match '^[Nn]') {
 } else {
   $doSerena = "Y"; $doHeadroom = "Y"; $doRtk = "Y"; $doCaveman = "Y"
 }
+$doAny = $doSerena -eq "Y" -or $doHeadroom -eq "Y" -or $doRtk -eq "Y" -or $doCaveman -eq "Y"
 Write-Host ""
 
 $ClaudeDir  = "$HOME/.claude"
@@ -404,6 +405,7 @@ if (Test-Path "$ClaudeDir/skills\caveman\SKILL.md") {
 }  # end Caveman gate
 
 # ── 10. Management tools (uninstall script + skill) ──────────────────────────
+if ($doAny) {
 Step "10/10  Management tools"
 
 $UninstallSrc = "$ScriptDir\uninstall.ps1"
@@ -414,7 +416,7 @@ if (Test-Path $UninstallSrc) {
     Warn "uninstall.ps1 not found -- clone the full repo to enable uninstall support"
 }
 
-$SmartokenSkillDir = "$ClaudeDir/skills\smartoken"
+$SmartokenSkillDir = "$ClaudeDir/skills/smartoken"
 New-Item -ItemType Directory -Path $SmartokenSkillDir -Force | Out-Null
 $SkillContent = @'
 ---
@@ -436,6 +438,7 @@ The script asks which tools to remove. Reload your shell after.
 '@
 Set-Content -Path "$SmartokenSkillDir/SKILL.md" -Value $SkillContent -Encoding UTF8
 Ok "Smartoken skill: $SmartokenSkillDir/"
+}  # end doAny
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 Write-Host ""
@@ -444,12 +447,18 @@ Write-Host "  Setup complete!                                                " -
 Write-Host "  Reload your profile: . `$PROFILE                              " -ForegroundColor Green
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
+if ($doAny) {
 Write-Host "  What was deployed:" -ForegroundColor White
-Write-Host "  * Serena MCP server  -> $ClaudeDir/config.json"
-Write-Host "  * SessionStart hook  -> $ClaudeDir/settings.json"
-Write-Host "  * Serena skill       -> $SkillsDir/"
-Write-Host "  * CLAUDE.md section  -> $ClaudeDir/CLAUDE.md"
-Write-Host "  * Headroom claude()  -> $ProfilePath"
+if ($doSerena -eq "Y") {
+    Write-Host "  * Serena MCP server  -> $ClaudeDir/config.json"
+    Write-Host "  * SessionStart hook  -> $ClaudeDir/settings.json"
+    Write-Host "  * Serena skill       -> $SkillsDir/"
+    Write-Host "  * CLAUDE.md section  -> $ClaudeDir/CLAUDE.md"
+}
+if ($doHeadroom -eq "Y") {
+    Write-Host "  * Headroom claude()  -> $ProfilePath"
+}
 Write-Host "  * Uninstall script   -> $ClaudeDir/uninstall-smartoken.ps1"
 Write-Host "  * Smartoken skill    -> $SmartokenSkillDir/"
+}
 Write-Host ""

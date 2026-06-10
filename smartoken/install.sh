@@ -62,6 +62,10 @@ if [[ "$INSTALL_ALL" =~ ^[Nn]$ ]]; then
 else
   DO_SERENA=Y; DO_HEADROOM=Y; DO_RTK=Y; DO_CAVEMAN=Y
 fi
+DO_ANY=N
+if [[ "$DO_SERENA" =~ ^[Yy]$ ]] || [[ "$DO_HEADROOM" =~ ^[Yy]$ ]] || [[ "$DO_RTK" =~ ^[Yy]$ ]] || [[ "$DO_CAVEMAN" =~ ^[Yy]$ ]]; then
+  DO_ANY=Y
+fi
 echo -e ""
 
 CLAUDE_DIR="$HOME/.claude"
@@ -434,6 +438,7 @@ fi
 fi
 
 # ── 10. Management tools (uninstall script + skill) ─────────────────────────
+if [[ "$DO_ANY" =~ ^[Yy]$ ]]; then
 step "10/10  Management tools"
 
 if [[ -f "$SCRIPT_DIR/uninstall.sh" ]]; then
@@ -462,12 +467,13 @@ Run the uninstall script placed in `~/.claude/` during installation.
 
 **Windows (PowerShell as Administrator):**
 ```powershell
-powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\uninstall-smartoken.ps1"
+powershell -ExecutionPolicy Bypass -File "$HOME/.claude/uninstall-smartoken.ps1"
 ```
 
 The script asks which tools to remove. Reload your shell after.
 SKILLEOF
 ok "Smartoken skill: ~/.claude/skills/smartoken/"
+fi  # end DO_ANY
 
 # ── Done ────────────────────────────────────────────────────────────────────
 echo -e ""
@@ -477,11 +483,11 @@ echo -e "${GREEN}║     source ~/${SHELL_PROFILE##*/}                          
 echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${RESET}"
 echo -e ""
 echo -e "  ${BOLD}What was deployed:${RESET}"
-echo -e "  • Serena MCP server  → ~/.claude/config.json"
-echo -e "  • SessionStart hook  → ~/.claude/settings.json"
-echo -e "  • Serena skill       → ~/.claude/skills/serena-session-start/"
-echo -e "  • CLAUDE.md section  → ~/.claude/CLAUDE.md"
-echo -e "  • Headroom claude()  → $SHELL_PROFILE"
-echo -e "  • Uninstall script   → ~/.claude/uninstall-smartoken.sh"
-echo -e "  • Smartoken skill    → ~/.claude/skills/smartoken/"
+[[ "$DO_SERENA"  =~ ^[Yy]$ ]] && echo -e "  • Serena MCP server  → ~/.claude/config.json"
+[[ "$DO_SERENA"  =~ ^[Yy]$ ]] && echo -e "  • SessionStart hook  → ~/.claude/settings.json"
+[[ "$DO_SERENA"  =~ ^[Yy]$ ]] && echo -e "  • Serena skill       → ~/.claude/skills/serena-session-start/"
+[[ "$DO_SERENA"  =~ ^[Yy]$ ]] && echo -e "  • CLAUDE.md section  → ~/.claude/CLAUDE.md"
+[[ "$DO_HEADROOM" =~ ^[Yy]$ ]] && echo -e "  • Headroom claude()  → $SHELL_PROFILE"
+[[ "$DO_ANY"     =~ ^[Yy]$ ]] && echo -e "  • Uninstall script   → ~/.claude/uninstall-smartoken.sh"
+[[ "$DO_ANY"     =~ ^[Yy]$ ]] && echo -e "  • Smartoken skill    → ~/.claude/skills/smartoken/"
 echo -e ""
