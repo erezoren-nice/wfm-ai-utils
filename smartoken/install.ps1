@@ -1,4 +1,4 @@
-# deploy-setup.ps1 — Deploy Serena + Headroom Claude setup (Windows)
+﻿# deploy-setup.ps1 — Deploy Serena + Headroom Claude setup (Windows)
 # Idempotent: safe to run multiple times on the same or a new machine.
 # Run with: powershell -ExecutionPolicy Bypass -File deploy-setup.ps1
 

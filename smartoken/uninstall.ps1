@@ -1,4 +1,4 @@
-# uninstall-smartoken.ps1 — Remove smartoken token efficiency stack (Windows)
+﻿# uninstall-smartoken.ps1 — Remove smartoken token efficiency stack (Windows)
 # Idempotent: safe to run multiple times.
 # Run with: powershell -ExecutionPolicy Bypass -File uninstall.ps1
 
