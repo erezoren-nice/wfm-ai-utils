@@ -319,7 +319,7 @@ function claude {
 
     if (Test-Path $marker) {
         Write-Host "HEADROOM wrap mode active for this project. (del .headroom to disable)" -ForegroundColor Green
-        headroom wrap claude @args
+        python -m headroom wrap claude @args
         return
     }
 
@@ -332,10 +332,10 @@ function claude {
     if ($ans -eq "always") {
         New-Item -ItemType File -Path $marker -Force | Out-Null
         Write-Host "   Saved .headroom -- auto-enabled for this project from now on." -ForegroundColor Green
-        headroom wrap claude @args
+        python -m headroom wrap claude @args
     } elseif ($ans -eq "y") {
         Write-Host "   Headroom wrap mode on for this session." -ForegroundColor Green
-        headroom wrap claude @args
+        python -m headroom wrap claude @args
     } else {
         Write-Host "   Skipping Headroom -- launching plain claude."
         & claude.exe @args

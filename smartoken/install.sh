@@ -389,7 +389,7 @@ claude() {
   fi
 
   if [[ "$use_headroom" == "y" ]]; then
-    headroom wrap claude "$@"
+    python3 -m headroom wrap claude "$@"
   else
     command claude "$@"
   fi
