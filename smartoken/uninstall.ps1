@@ -26,7 +26,7 @@ if ($uninstallAll -match '^[Nn]') {
 }
 Write-Host ""
 
-$ClaudeDir = "$env:USERPROFILE\.claude"
+$ClaudeDir = "$HOME/.claude"
 
 # Detect Python
 $PythonCmd = ""
@@ -38,11 +38,11 @@ else { Write-Host "  ! Python not found -- JSON cleanup steps skipped" -Foregrou
 if ($doSerena -eq "Y") {
 Step "Serena"
 
-$d = "$ClaudeDir\skills\serena-session-start"
+$d = "$ClaudeDir/skills\serena-session-start"
 if (Test-Path $d) { Remove-Item $d -Recurse -Force; Ok "Removed skills\serena-session-start\" }
 else { Info "skills\serena-session-start\ not found" }
 
-$h = "$ClaudeDir\hooks\serena-session-start-hook.py"
+$h = "$ClaudeDir/hooks\serena-session-start-hook.py"
 if (Test-Path $h) { Remove-Item $h -Force; Ok "Removed hooks\serena-session-start-hook.py" }
 
 if ($PythonCmd) {
@@ -154,7 +154,7 @@ if (Get-Command headroom -ErrorAction SilentlyContinue) {
 if ($doRtk -eq "Y") {
 Step "RTK"
 
-$rtkBin = "$env:USERPROFILE\.local\bin\rtk.exe"
+$rtkBin = "$HOME/.local/bin/rtk"
 if (Test-Path $rtkBin) { Remove-Item $rtkBin -Force; Ok "Removed $rtkBin" }
 else { Info "RTK binary not found at $rtkBin" }
 
@@ -188,7 +188,7 @@ else:
 # ── Caveman ───────────────────────────────────────────────────────────────────
 if ($doCaveman -eq "Y") {
 Step "Caveman"
-$d = "$ClaudeDir\skills\caveman"
+$d = "$ClaudeDir/skills\caveman"
 if (Test-Path $d) { Remove-Item $d -Recurse -Force; Ok "Removed skills\caveman\" }
 else { Info "skills\caveman\ not found" }
 }  # end Caveman

@@ -48,9 +48,9 @@ if ($installAll -match '^[Nn]') {
 }
 Write-Host ""
 
-$ClaudeDir  = "$env:USERPROFILE\.claude"
-$SkillsDir  = "$ClaudeDir\skills\serena-session-start"
-$HooksDir   = "$ClaudeDir\hooks"
+$ClaudeDir  = "$HOME/.claude"
+$SkillsDir  = "$ClaudeDir/skills/serena-session-start"
+$HooksDir   = "$ClaudeDir/hooks"
 
 # ── 1. Prerequisites ────────────────────────────────────────────────────────
 Step "1/9  Checking prerequisites"
@@ -75,7 +75,7 @@ if (Get-Command uvx -ErrorAction SilentlyContinue) {
 } else {
     Info "Installing uv (needed for Serena MCP)..."
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-    $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
+    $env:PATH = "$HOME/.local/bin:$env:PATH"
     Ok "uv installed"
 }
 }  # end doSerena
@@ -127,8 +127,8 @@ print(json.dumps({
     }
 }))
 '@
-Set-Content -Path "$HooksDir\serena-session-start-hook.py" -Value $HookScript -Encoding UTF8
-Ok "Hook script: $HooksDir\serena-session-start-hook.py"
+Set-Content -Path "$HooksDir/serena-session-start-hook.py" -Value $HookScript -Encoding UTF8
+Ok "Hook script: $HooksDir/serena-session-start-hook.py"
 
 # — Skill SKILL.md —
 $SkillMd = @'
@@ -205,8 +205,8 @@ If declined, activate without config for basic symbol navigation.
 | Reading before editing | replace_symbol_body directly |
 | Checking errors | get_diagnostics_for_file |
 '@
-Set-Content -Path "$SkillsDir\SKILL.md" -Value $SkillMd -Encoding UTF8
-Ok "Skill: $SkillsDir\SKILL.md"
+Set-Content -Path "$SkillsDir/SKILL.md" -Value $SkillMd -Encoding UTF8
+Ok "Skill: $SkillsDir/SKILL.md"
 }  # end doSerena
 
 # ── 6. Merge config files (Python) ─────────────────────────────────────────
@@ -214,7 +214,7 @@ if ($doSerena -eq "Y") {
 Step "6/9  Merging Claude config files"
 
 # Use the detected python command (handle forward slashes for Windows paths)
-$HookCmdPath = "$ClaudeDir\hooks\serena-session-start-hook.py" -replace '\\', '/'
+$HookCmdPath = "$ClaudeDir/hooks\serena-session-start-hook.py" -replace '\\', '/'
 $PythonScript = @"
 import json, os, sys
 
@@ -349,7 +349,7 @@ function claude {
 # ── 8. RTK — CLI output compressor ───────────────────────────────────────────
 if ($doRtk -eq "Y") {
 Step "8/9  RTK — CLI output compressor"
-$rtkPath = "$env:USERPROFILE\.local\bin\rtk.exe"
+$rtkPath = "$HOME/.local/bin/rtk"
 if (Get-Command rtk -ErrorAction SilentlyContinue) {
     Ok "RTK already installed"
 } else {
@@ -357,7 +357,7 @@ if (Get-Command rtk -ErrorAction SilentlyContinue) {
     $arch = if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") { "aarch64" } else { "x86_64" }
     $rtkUrl = "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-$arch-pc-windows-msvc.zip"
     $zipPath = "$env:TEMP\rtk.zip"
-    $binDir = "$env:USERPROFILE\.local\bin"
+    $binDir = "$HOME/.local/bin"
     New-Item -ItemType Directory -Path $binDir -Force | Out-Null
     try {
         Invoke-WebRequest -Uri $rtkUrl -OutFile $zipPath -UseBasicParsing
@@ -380,7 +380,7 @@ if (Get-Command rtk -ErrorAction SilentlyContinue) {
 # ── 9. Caveman — AI response compressor ───────────────────────────────────────
 if ($doCaveman -eq "Y") {
 Step "9/10  Caveman — AI response compressor"
-if (Test-Path "$ClaudeDir\skills\caveman\SKILL.md") {
+if (Test-Path "$ClaudeDir/skills\caveman\SKILL.md") {
     Ok "Caveman already installed"
 } else {
     $nodeOk = $false
@@ -408,13 +408,13 @@ Step "10/10  Management tools"
 
 $UninstallSrc = "$ScriptDir\uninstall.ps1"
 if (Test-Path $UninstallSrc) {
-    Copy-Item $UninstallSrc "$ClaudeDir\uninstall-smartoken.ps1" -Force
-    Ok "Uninstall script: $ClaudeDir\uninstall-smartoken.ps1"
+    Copy-Item $UninstallSrc "$ClaudeDir/uninstall-smartoken.ps1" -Force
+    Ok "Uninstall script: $ClaudeDir/uninstall-smartoken.ps1"
 } else {
     Warn "uninstall.ps1 not found -- clone the full repo to enable uninstall support"
 }
 
-$SmartokenSkillDir = "$ClaudeDir\skills\smartoken"
+$SmartokenSkillDir = "$ClaudeDir/skills\smartoken"
 New-Item -ItemType Directory -Path $SmartokenSkillDir -Force | Out-Null
 $SkillContent = @'
 ---
@@ -430,12 +430,12 @@ Mac/Linux:
   ~/.claude/uninstall-smartoken.sh
 
 Windows (PowerShell as Administrator):
-  powershell -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\uninstall-smartoken.ps1"
+  powershell -ExecutionPolicy Bypass -File "$HOME/.claude/uninstall-smartoken.ps1"
 
 The script asks which tools to remove. Reload your shell after.
 '@
-Set-Content -Path "$SmartokenSkillDir\SKILL.md" -Value $SkillContent -Encoding UTF8
-Ok "Smartoken skill: $SmartokenSkillDir\"
+Set-Content -Path "$SmartokenSkillDir/SKILL.md" -Value $SkillContent -Encoding UTF8
+Ok "Smartoken skill: $SmartokenSkillDir/"
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 Write-Host ""
@@ -445,11 +445,11 @@ Write-Host "  Reload your profile: . `$PROFILE                              " -F
 Write-Host "================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  What was deployed:" -ForegroundColor White
-Write-Host "  * Serena MCP server  -> $ClaudeDir\config.json"
-Write-Host "  * SessionStart hook  -> $ClaudeDir\settings.json"
-Write-Host "  * Serena skill       -> $SkillsDir\"
-Write-Host "  * CLAUDE.md section  -> $ClaudeDir\CLAUDE.md"
+Write-Host "  * Serena MCP server  -> $ClaudeDir/config.json"
+Write-Host "  * SessionStart hook  -> $ClaudeDir/settings.json"
+Write-Host "  * Serena skill       -> $SkillsDir/"
+Write-Host "  * CLAUDE.md section  -> $ClaudeDir/CLAUDE.md"
 Write-Host "  * Headroom claude()  -> $ProfilePath"
-Write-Host "  * Uninstall script   -> $ClaudeDir\uninstall-smartoken.ps1"
-Write-Host "  * Smartoken skill    -> $SmartokenSkillDir\"
+Write-Host "  * Uninstall script   -> $ClaudeDir/uninstall-smartoken.ps1"
+Write-Host "  * Smartoken skill    -> $SmartokenSkillDir/"
 Write-Host ""
