@@ -3,6 +3,8 @@
 One-command setup that installs a four-tool token efficiency stack for Claude Code.
 **60–95% fewer tokens** on everyday dev tasks — without changing your workflow.
 
+![smartoken banner](assets/banner.png)
+
 ---
 
 ## The Stack
@@ -53,6 +55,10 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
 The installer shows a menu — press **Enter** to install all four, or choose individually.
+
+![install menu](assets/menu.png)
+
+![install complete](assets/done.png)
 
 ---
 
